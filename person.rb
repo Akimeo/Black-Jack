@@ -3,7 +3,7 @@
 class Person
   include Bank
 
-  attr_accessor :hand
+  attr_reader :hand
 
   def initialize
     @hand = []

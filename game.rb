@@ -9,7 +9,8 @@ class Game
   INITIAL_CASH = 100
   BID_AMOUNT = 10
   DEALER_SCORE = 17
-  CARD_VALUE = { n2: 2, n3: 3, n4: 4, n5: 5, n6: 6, n7: 7, n8: 8, n9: 9, n10: 10, j: 10, q: 10, k: 10, a: 11 }.freeze
+  CARD_VALUE = { n2: 2, n3: 3, n4: 4, n5: 5, n6: 6, n7: 7, n8: 8, n9: 9,
+                 n10: 10, j: 10, q: 10, k: 10, a: 11 }.freeze
 
   def initialize
     @player = Player.new
@@ -45,6 +46,10 @@ class Game
 
   def can_draw?
     player.card_quantity == 2
+  end
+
+  def player_won?
+    dealer_bank.zero?
   end
 
   def score(person)
@@ -87,7 +92,6 @@ class Game
     self.round_status = true
   end
 
-# Доработать условия завершения раунда
   def player_turn(action)
     case action
     when 1
@@ -101,28 +105,25 @@ class Game
     end
   end
 
-# Доработать логику дилера
   def dealer_turn
     dealer.draw(deck.top_card) if score(dealer) < DEALER_SCORE &&
                                   dealer.card_quantity == 2
   end
 
-# Доработать условия завершения раунда
   def finish_round
     if score(player) == score(dealer) || score(player) > 21 && score(dealer) > 21
       player.get_cash(send_cash(BID_AMOUNT))
       dealer.get_cash(send_cash(BID_AMOUNT))
-      self.round_status = false
-      return :tie
-    end
-    if score(player) > score(dealer) && score(player) <= 21 || score(dealer) > 21
+      result = :tie
+    elsif score(player) > score(dealer) && score(player) <= 21 || score(dealer) > 21
       player.get_cash(send_cash(BID_AMOUNT * 2))
-      self.round_status = false
-      return :victory
+      result = :victory
     else
       dealer.get_cash(send_cash(BID_AMOUNT * 2))
-      self.round_status = false
-      return :defeat
+      result = :defeat
     end
+    self.round_status = false
+    self.game_status = false if dealer.bank.zero? || player.bank.zero?
+    result
   end
 end

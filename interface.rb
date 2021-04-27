@@ -10,8 +10,8 @@ class Interface
     puts 'Для начала представтесь:'
     @name = gets.chomp
     puts "\nДобро пожаловать в игру Black Jack, #{name}! Ваша задача " \
-         "обыграть дилера, забрав его банк себе. Для победы в раунде " \
-         "получите больше очков чем оппонент, но не более 21."
+         'обыграть дилера, забрав его банк себе. Для победы в раунде ' \
+         'получите больше очков чем оппонент, но не более 21.'
     @game = Game.new
     game_start
   end
@@ -27,27 +27,46 @@ class Interface
     game_cycle
   end
 
-# Доработать завершение игры
   def game_cycle
     game.start_round
     puts "\nСтавки сделаны, раунд начался!"
     while game.round_status
       show_table
       print_options
-      input = gets.chomp.to_i
-      temp = game.player_turn(input)
+      result = game.player_turn(make_choice)
     end
     show_table(false)
     puts "Сумма очков дилера: #{game.dealer_score}"
-    puts temp
+    case result
+    when :tie
+      puts "\nРаунд завершился ничьей!"
+    when :victory
+      puts "\nВ раунде побеждает #{name}!"
+    when :defeat
+      puts "\nВ раунде побеждает дилер!"
+    end
     print_bank
-    puts "Играем дальше?\n1. Да\n2. Нет"
+    if game.game_status
+      game_cycle
+    else
+      game_finish
+    end
+  end
+
+  def game_finish
+    puts "\nИгра окончена!"
+    if game.player_won?
+      puts "#{name} wins!"
+    else
+      puts 'Dealer wins!'
+    end
+    puts "\nХотите сыграть еще раз?\n1. Да\n2. Нет"
     input = gets.chomp.to_i
-    game_cycle if input == 1
+    game_start if input == 1
   end
 
   def print_bank
-    puts "В банке игрока #{game.player_bank}$"
+    puts "\nВ банке игрока #{game.player_bank}$"
     puts "В банке дилера #{game.dealer_bank}$"
   end
 
@@ -77,13 +96,25 @@ class Interface
     puts '  ‾‾  ' * cards.size
   end
 
-# Доработать выбор
   def print_options
     puts "\nВаши действия:"
     if game.can_draw?
       puts "1. Пропустить\n2. Добавить карту \n3. Открыть карты"
     else
-      puts "1. Пропустить\n3. Открыть карты"
+      puts "1. Пропустить\n2. Открыть карты"
     end
+  end
+
+  def make_choice
+    input = gets.chomp.to_i
+    unless game.can_draw?
+      case input
+      when 2
+        return 3
+      when 3
+        return 0
+      end
+    end
+    input
   end
 end
