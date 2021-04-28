@@ -9,8 +9,6 @@ class Game
   INITIAL_CASH = 100
   BID_AMOUNT = 10
   DEALER_SCORE = 17
-  CARD_VALUE = { n2: 2, n3: 3, n4: 4, n5: 5, n6: 6, n7: 7, n8: 8, n9: 9,
-                 n10: 10, j: 10, q: 10, k: 10, a: 11 }.freeze
 
   def initialize
     @player = Player.new
@@ -29,47 +27,31 @@ class Game
   end
 
   def player_hand
-    player.hand
+    player.hand.cards
   end
 
   def dealer_hand
-    dealer.hand
+    dealer.hand.cards
   end
 
   def player_score
-    score(player)
+    player.hand.score
   end
 
   def dealer_score
-    score(dealer)
+    dealer.hand.score
   end
 
   def can_draw?
-    player.card_quantity == 2
+    !player.hand.enough_cards?
+  end
+
+  def dealer_won?
+    player.bank.zero?
   end
 
   def player_won?
-    dealer_bank.zero?
-  end
-
-  def score(person)
-    score = 0
-    aces = 0
-    person.hand.each do |card|
-      aces += 1 if card.type == :a
-      score += CARD_VALUE[card.type]
-    end
-    while score > 21 && aces != 0
-      score -= 10
-      aces -= 1
-    end
-    score
-  end
-
-  def enough_cards?
-    return true if player.card_quantity == 3 && dealer.card_quantity == 3
-
-    false
+    dealer.bank.zero?
   end
 
   def start_game
@@ -80,12 +62,12 @@ class Game
   end
 
   def start_round
-    player.discard
-    dealer.discard
+    player.hand.discard
+    dealer.hand.discard
     deck.shuffle
     2.times do
-      player.draw(deck.top_card)
-      dealer.draw(deck.top_card)
+      player.hand.draw(deck.top_card)
+      dealer.hand.draw(deck.top_card)
     end
     get_cash(player.send_cash(BID_AMOUNT))
     get_cash(dealer.send_cash(BID_AMOUNT))
@@ -97,25 +79,27 @@ class Game
     when 1
       dealer_turn
     when 2
-      player.draw(deck.top_card)
+      player.hand.draw(deck.top_card)
       dealer_turn
-      finish_round if enough_cards?
+      finish_round if player.hand.enough_cards? && dealer.hand.enough_cards?
     when 3
       finish_round
     end
   end
 
   def dealer_turn
-    dealer.draw(deck.top_card) if score(dealer) < DEALER_SCORE &&
-                                  dealer.card_quantity == 2
+    dealer.hand.draw(deck.top_card) if dealer.hand.score < DEALER_SCORE &&
+                                       !dealer.hand.enough_cards?
   end
 
   def finish_round
-    if score(player) == score(dealer) || score(player) > 21 && score(dealer) > 21
+    if player.hand.score == dealer.hand.score ||
+       player.hand.score > 21 && dealer.hand.score > 21
       player.get_cash(send_cash(BID_AMOUNT))
       dealer.get_cash(send_cash(BID_AMOUNT))
       result = :tie
-    elsif score(player) > score(dealer) && score(player) <= 21 || score(dealer) > 21
+    elsif player.hand.score > dealer.hand.score && player.hand.score <= 21 ||
+          dealer.hand.score > 21
       player.get_cash(send_cash(BID_AMOUNT * 2))
       result = :victory
     else
@@ -123,7 +107,7 @@ class Game
       result = :defeat
     end
     self.round_status = false
-    self.game_status = false if dealer.bank.zero? || player.bank.zero?
+    self.game_status = false if dealer_won? || player_won?
     result
   end
 end

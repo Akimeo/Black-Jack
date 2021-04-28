@@ -6,13 +6,16 @@ class Interface
                   a: 'A ' }.freeze
   PRINT_SUITS = { clubs: '♠', diamonds: '♦', hearts: '♥', spades: '♣' }.freeze
 
+  def initialize(game)
+    @game = game
+  end
+
   def greeting
     puts 'Для начала представтесь:'
     @name = gets.chomp
     puts "\nДобро пожаловать в игру Black Jack, #{name}! Ваша задача " \
          'обыграть дилера, забрав его банк себе. Для победы в раунде ' \
          'получите больше очков чем оппонент, но не более 21.'
-    @game = Game.new
     game_start
   end
 
@@ -35,7 +38,7 @@ class Interface
       print_options
       result = game.player_turn(make_choice)
     end
-    show_table(false)
+    show_table(hide: false)
     puts "Сумма очков дилера: #{game.dealer_score}"
     case result
     when :tie
@@ -70,15 +73,15 @@ class Interface
     puts "В банке дилера #{game.dealer_bank}$"
   end
 
-  def show_table(hide = true)
+  def show_table(hide: true)
     puts "\n=================="
-    print_cards(game.dealer_hand, hide)
+    print_cards(game.dealer_hand, hide: hide)
     print_cards(game.player_hand)
     puts '=================='
     puts "Сумма очков игрока: #{game.player_score}"
   end
 
-  def print_cards(cards, hide = false)
+  def print_cards(cards, hide: false)
     #  __   __   __   __   __
     # |J | |Q | |K | |A | |* |
     # | ♠| | ♦| | ♥| | ♣| | *|
